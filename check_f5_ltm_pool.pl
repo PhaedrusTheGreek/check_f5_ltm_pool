@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#!/usr/bin/perl
 #
 #   Check F5 LTM 11 Pool & Member Performance Metrics
 ##
@@ -28,7 +28,7 @@ my($VERSION) = '1.00';
 my($snmpcmd) = '/usr/bin/snmpget';
 
 my(%pool) = (
-    	'ltmPoolLbMode' => 		{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.2', 'desc' => 'Load Balancing Algorithm' },
+		'ltmPoolLbMode' => 		{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.2', 'desc' => 'Load Balancing Algorithm' },
 	'ltmPoolMinUpMembers' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.4', 'desc' => 'Minimum Members Up' },
 	'ltmPoolMonitorRule' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.17', 'desc' => 'Monitoring Rule' },
 	'ltmPoolStatusAvailState' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.5.2.1.2', 'desc' => 'Status' },
@@ -93,7 +93,7 @@ my(%availState) = (
 
 my $np = Nagios::Plugin->new(
   usage => "Usage: %s -H <hostname> -C <Community> \n"
-    . "\t-P <Pool Name> [-p <Partition Name>] \n"
+	. "\t-P <Pool Name> [-p <Partition Name>] \n"
 	. "\t[-M <Member Name> -S <Service Port>] \n"
 	. " Don't forget to include the Partition Name in the Pool and Member\n"
 	. " Pool Mode Example: ./check_f5_ltm_pool.pl -H 10.1.1.1 -C public -P /Common/MY-POOL \n"
@@ -121,21 +121,21 @@ $np->add_arg(
 $np->add_arg(
   spec => 'pool|P=s',
   help => "-P, --pool=<Pool Name>\n"
-    . "   Pool Name\n",
+	. "   Pool Name\n",
   required => 1,
 );
 
 $np->add_arg(
   spec => 'member|M=s',
   help => "-M, --member=<Member Name>\n"
-    . "   Member Name\n",
+	. "   Member Name\n",
   required => 0,
 );
 
 $np->add_arg(
   spec => 'service|S=s',
   help => "-S, --service=<Service Port>\n"
-    . "   Service Port\n",
+	. "   Service Port\n",
   required => 0,
 );
 
@@ -161,10 +161,51 @@ my(%snmpResults);
 my($oidMemberName);
 my($status, $message);
 
+my($GetResults);
+$GetResults = sub {
+
+	my($mode) = @_;
+	my(%oidTable);
+	my($oidSuffix);
+	
+	if ($mode eq "Pool") {
+		%oidTable = %pool;
+		$oidSuffix = "";
+	} elsif ($mode eq "Member") {
+		%oidTable = %member;
+		$oidSuffix = "." . $oidMemberName . "." . $ServicePort;
+	} 
+	
+	foreach my $obj (keys %oidTable) {
+		
+		my($cmd) = "$snmpcmd -v2c -c $community -m '' -On -Oe $hostname " . $oidTable{$obj}{'oid'} . "." . $oidPoolName . $oidSuffix;
+		
+		if ($np->opts->verbose) {
+		  print STDERR "Running command: \"$cmd\"\n" if ($np->opts->verbose >= 2);
+		} else {
+		  $cmd .= ' 2>/dev/null';
+		}
+		
+		my(@response) = split(/:/,`$cmd`);
+		my($result) = $response[1];
+		return 0 if (!defined($result));
+		chomp($result);
+		$snmpResults{$obj} = $result;
+		
+		$np->add_perfdata( label => $oidTable{$obj}{'desc'}, value => $result , uom => $oidTable{$obj}{'uom'}  ) if (defined($oidTable{$obj}{'uom'}));
+		
+		print STDERR "$oidTable{$obj}{'desc'} = $snmpResults{$obj}\n" if ($np->opts->verbose);
+		
+	}
+	
+	return 1;
+
+};
+
 if (!$MemberMode) {
 
 	# Learn about the Pool
-	if (!GetResults("Pool")){
+	if (!&$GetResults("Pool")){
 	 $np->nagios_exit('UNKNOWN', "Pool '$PoolName' is unknown");
 	}
 	
@@ -190,7 +231,7 @@ if (!$MemberMode) {
 	print STDERR "oidMemberName = $oidMemberName\n" if ($np->opts->verbose >= 2);
 			
 	# Learn about the Member
-	if (!GetResults("Member")){
+	if (!&$GetResults("Member")){
 		$np->nagios_exit('UNKNOWN', "Member '$MemberName' is unknown");
 	}
 	
@@ -220,43 +261,6 @@ sub str2oid{
 	return length($origString) .$oidString;
 }
 
-sub GetResults{
 
-	my($mode) = @_;
-	my(%oidTable);
-	my($oidSuffix);
-	
-	if ($mode eq "Pool") {
-		%oidTable = %pool;
-		$oidSuffix = "";
-	} elsif ($mode eq "Member") {
-		%oidTable = %member;
-		$oidSuffix = "." . $oidMemberName . "." . $ServicePort;
-	} 
-	
-    foreach my $obj (keys %oidTable) {
-		
-		my($cmd) = "$snmpcmd -v2c -c $community -m '' -On -Oe $hostname " . $oidTable{$obj}{'oid'} . "." . $oidPoolName . $oidSuffix;
-		
-		if ($np->opts->verbose) {
-		  print STDERR "Running command: \"$cmd\"\n" if ($np->opts->verbose >= 2);
-		} else {
-		  $cmd .= ' 2>/dev/null';
-		}
-		
-		my(@response) = split(/:/,`$cmd`);
-		my($result) = $response[1];
-		return 0 if (!defined($result));
-		chomp($result);
-		$snmpResults{$obj} = $result;
-		
-		$np->add_perfdata( label => $oidTable{$obj}{'desc'}, value => $result , uom => $oidTable{$obj}{'uom'}  ) if (defined($oidTable{$obj}{'uom'}));
-		
-		print STDERR "$oidTable{$obj}{'desc'} = $snmpResults{$obj}\n" if ($np->opts->verbose);
-		
-	}
-	
-	return 1;
 
-}
 
