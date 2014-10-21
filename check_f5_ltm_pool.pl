@@ -169,18 +169,24 @@ $GetResults = sub {
 	my($oidSuffix);
 	
 	if ($mode eq "Pool") {
+	    print STDERR "Running in Pool Mode\n" if ($np->opts->verbose);
 		%oidTable = %pool;
 		$oidSuffix = "";
 	} elsif ($mode eq "Member") {
+	    print STDERR "Running in Member Mode\n" if ($np->opts->verbose);
 		%oidTable = %member;
 		$oidSuffix = "." . $oidMemberName . "." . $ServicePort;
 	} 
+	
+    print STDERR sprintf("Converted Pool Name '%s' to OID as: %s \n", $PoolName, $oidPoolName ) if ($np->opts->verbose >= 2);
+
 	
 	foreach my $obj (keys %oidTable) {
 		
 		my($cmd) = "$snmpcmd -v2c -c $community -m '' -On -Oe $hostname " . $oidTable{$obj}{'oid'} . "." . $oidPoolName . $oidSuffix;
 		
 		if ($np->opts->verbose) {
+		  print STDERR sprintf("Checking %s (base oid=%s)\n", $oidTable{$obj}{'desc'}, $oidTable{$obj}{'oid'} ) if ($np->opts->verbose >= 2);
 		  print STDERR "Running command: \"$cmd\"\n" if ($np->opts->verbose >= 2);
 		} else {
 		  $cmd .= ' 2>/dev/null';
@@ -226,6 +232,7 @@ if (!$MemberMode) {
 	
 } else {
 
+
 	$oidMemberName = str2oid($MemberName);
 	
 	print STDERR "oidMemberName = $oidMemberName\n" if ($np->opts->verbose >= 2);
@@ -258,7 +265,7 @@ sub str2oid{
 	my ($origString) = @_;
 	my ($oidString) = $origString;
 	$oidString =~ s/(.)/sprintf('.%u', ord($1))/eg;
-	return length($origString) .$oidString;
+	return length($origString) . $oidString;
 }
 
 
