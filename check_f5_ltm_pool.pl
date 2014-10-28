@@ -103,7 +103,6 @@ my $np = Nagios::Plugin->new(
   plugin  => $PROGNAME,
   shortname => uc($PROGNAME),
   blurb => 'Check F5 LTM Pool/Member Status & Performance Metrics',
-  timeout => 10,
 );
 
 $np->add_arg(
@@ -131,6 +130,8 @@ $np->add_arg(
 	. "   Member Name\n",
   required => 0,
 );
+
+
 
 $np->add_arg(
   spec => 'service|S=s',
@@ -192,7 +193,7 @@ $GetResults = sub {
 		  $cmd .= ' 2>/dev/null';
 		}
 		
-		my(@response) = split(/:/,`$cmd`);
+		my(@response) = split(/:/,`$cmd`,2);
 		my($result) = $response[1];
 		return 0 if (!defined($result));
 		chomp($result);
