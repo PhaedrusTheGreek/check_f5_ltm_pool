@@ -24,43 +24,47 @@ use warnings;
 use Nagios::Plugin;
 
 my($PROGNAME) = 'check_f5_ltm_pool.pl';
-my($VERSION) = '1.00';
+my($VERSION) = '1.01';
 my($snmpcmd) = '/usr/bin/snmpget';
 
+# - Items with no 'default' value are required (plugin will not continue if value is not retrieved
+# - items with no 'uom' value are not counted as performance metric
+
 my(%pool) = (
-		'ltmPoolLbMode' => 		{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.2', 'desc' => 'Load Balancing Algorithm' },
-	'ltmPoolMinUpMembers' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.4', 'desc' => 'Minimum Members Up' },
-	'ltmPoolMonitorRule' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.17', 'desc' => 'Monitoring Rule' },
+	'ltmPoolLbMode' => 		{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.2', 'desc' => 'Load Balancing Algorithm', 'default' => -1  },
+	'ltmPoolMinUpMembers' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.4', 'desc' => 'Minimum Members Up', 'default' => 0  },
+	'ltmPoolMonitorRule' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.17', 'desc' => 'Monitoring Rule', 'default' => ""  },
 	'ltmPoolStatusAvailState' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.5.2.1.2', 'desc' => 'Status' },
-	'ltmPoolStatusDetailReason' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.5.2.1.5', 'desc' => 'Status Reason' },
-	'ltmPoolActiveMemberCnt' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.8', 'desc' => 'Active Members' },
-	'ltmPoolMemberCnt' => 		{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.23', 'desc' => 'Members' },
-	'ltmPoolStatServerPktsIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.2', 'desc' => 'Packets In', 'uom' => 'c' },
-	'ltmPoolStatServerBytesIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.3', 'desc' => 'Bytes In', 'uom' => 'c' },
-	'ltmPoolStatServerPktsOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.4', 'desc' => 'Packets Out', 'uom' => 'c' },
-	'ltmPoolStatServerBytesOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.5', 'desc' => 'Bytes Out', 'uom' => 'c' },
-	'ltmPoolStatServerMaxConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.6', 'desc' => 'Max Connections' },
-	'ltmPoolStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.7', 'desc' => 'Total Connections', 'uom' => 'c' },
-	'ltmPoolStatServerCurConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.8', 'desc' => 'Current Connections', 'uom' => '' },
+	'ltmPoolStatusDetailReason' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.5.2.1.5', 'desc' => 'Status Reason', 'default' => "" },
+	'ltmPoolActiveMemberCnt' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.8', 'desc' => 'Active Members', 'default' => 0 },
+	'ltmPoolMemberCnt' => 		{'oid' => '.1.3.6.1.4.1.3375.2.2.5.1.2.1.23', 'desc' => 'Members', 'default' => 0  },
+	'ltmPoolStatServerPktsIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.2', 'desc' => 'Packets In', 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolStatServerBytesIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.3', 'desc' => 'Bytes In', 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolStatServerPktsOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.4', 'desc' => 'Packets Out', 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolStatServerBytesOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.5', 'desc' => 'Bytes Out', 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolStatServerMaxConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.6', 'desc' => 'Max Connections', 'default' => 0  },
+	'ltmPoolStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.7', 'desc' => 'Total Connections', 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolStatServerCurConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.8', 'desc' => 'Current Connections', 'uom' => '' , 'default' => 0 },
 );
 
 my(%member) = (
-	'ltmPoolMemberStatServerPktsIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.5', 'desc' => 'Packets In' , 'uom' => 'c' },
-	'ltmPoolMemberStatServerBytesIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.6', 'desc' => 'Bytes In' , 'uom' => 'c' },
-	'ltmPoolMemberStatServerPktsOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.7', 'desc' => 'Packets Out' , 'uom' => 'c' },
-	'ltmPoolMemberStatServerBytesOut' =>	{'oid' =>  '.1.3.6.1.4.1.3375.2.2.5.4.3.1.8', 'desc' => 'Bytes Out' , 'uom' => 'c' },
-	'ltmPoolMemberStatServerMaxConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.9', 'desc' => 'Max Connections'  },
-	'ltmPoolMemberStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.10', 'desc' => 'Total Connections' , 'uom' => 'c' },
-	'ltmPoolMemberStatServerCurConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.11', 'desc' => 'Current Connections' , 'uom' => '' },
-	'ltmPoolMemberStatTotRequests' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.19', 'desc' => 'Total Requests', 'uom' => 'c'},
-	'ltmPoolMemberStatCurSessions' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.29', 'desc' => 'Current Sessions', 'uom' => ''},
-	'ltmPoolMemberStatCurrentConnsPerSec' =>{'oid' =>  '.1.3.6.1.4.1.3375.2.2.5.4.3.1.30', 'desc' => 'Current Connections Per Second', 'uom' => ''},
+	'ltmPoolMemberStatServerPktsIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.5', 'desc' => 'Packets In' , 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolMemberStatServerBytesIn' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.6', 'desc' => 'Bytes In' , 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolMemberStatServerPktsOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.7', 'desc' => 'Packets Out' , 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolMemberStatServerBytesOut' =>	{'oid' =>  '.1.3.6.1.4.1.3375.2.2.5.4.3.1.8', 'desc' => 'Bytes Out' , 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolMemberStatServerMaxConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.9', 'desc' => 'Max Connections'  , 'default' => 0 },
+	'ltmPoolMemberStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.10', 'desc' => 'Total Connections' , 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolMemberStatServerCurConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.11', 'desc' => 'Current Connections' , 'uom' => '' , 'default' => 0 },
+	'ltmPoolMemberStatTotRequests' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.19', 'desc' => 'Total Requests', 'uom' => 'c', 'default' => 0 },
+	'ltmPoolMemberStatCurSessions' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.29', 'desc' => 'Current Sessions', 'uom' => '', 'default' => 0 },
+	'ltmPoolMemberStatCurrentConnsPerSec' =>{'oid' =>  '.1.3.6.1.4.1.3375.2.2.5.4.3.1.30', 'desc' => 'Current Connections Per Second', 'uom' => '', 'default' => 0 },
 	'ltmPoolMbrStatusAvailState'  => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.6.2.1.5', 'desc' => 'Status' },
-	'ltmPoolMbrStatusDetailReason' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.6.2.1.8', 'desc' => 'Status Reason' },
+	'ltmPoolMbrStatusDetailReason' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.6.2.1.8', 'desc' => 'Status Reason' , 'default' => ""},
 	
 );
 
 my(%ltmPoolLbMode) = (
+	'-1'	=> 'Unknown',
 	'0'		=> 'Round Robin',
 	'1'		=> 'Ratio - Member',
 	'2'		=> 'Lease Connections - Member',
@@ -182,9 +186,10 @@ $GetResults = sub {
     print STDERR sprintf("Converted Pool Name '%s' to OID as: %s \n", $PoolName, $oidPoolName ) if ($np->opts->verbose >= 2);
 
 	
-	foreach my $obj (keys %oidTable) {
+	foreach my $obj (sort keys %oidTable) {
 		
-		my($cmd) = "$snmpcmd -v2c -c $community -m '' -On -Oe $hostname " . $oidTable{$obj}{'oid'} . "." . $oidPoolName . $oidSuffix;
+		my($fulloid) = $oidTable{$obj}{'oid'} . "." . $oidPoolName . $oidSuffix;
+		my($cmd) = "$snmpcmd -v2c -c $community -m '' -On -Oe $hostname " . $fulloid;
 		
 		if ($np->opts->verbose) {
 		  print STDERR sprintf("Checking %s (base oid=%s)\n", $oidTable{$obj}{'desc'}, $oidTable{$obj}{'oid'} ) if ($np->opts->verbose >= 2);
@@ -195,25 +200,32 @@ $GetResults = sub {
 		
 		my(@response) = split(/:/,`$cmd`,2);
 		my($result) = $response[1];
-		return 0 if (!defined($result));
-		chomp($result);
-		$snmpResults{$obj} = $result;
 		
-		$np->add_perfdata( label => $oidTable{$obj}{'desc'}, value => $result , uom => $oidTable{$obj}{'uom'}  ) if (defined($oidTable{$obj}{'uom'}));
+		if (!defined($result) && !defined($oidTable{$obj}{'default'})){
+			return sprintf("No Data at Required OID: '%s' (%s)",$fulloid,$oidTable{$obj}{'desc'}) ;
+		} elsif (!defined($result)){
+			$snmpResults{$obj} = $oidTable{$obj}{'default'};
+		} else {
+			chomp($result);
+			$snmpResults{$obj} = $result;
+		}
+		
+		$np->add_perfdata( label => $oidTable{$obj}{'desc'}, value => $snmpResults{$obj} , uom => $oidTable{$obj}{'uom'}  ) if (defined($oidTable{$obj}{'uom'}));
 		
 		print STDERR "$oidTable{$obj}{'desc'} = $snmpResults{$obj}\n" if ($np->opts->verbose);
 		
 	}
 	
-	return 1;
+	return "";
 
 };
 
 if (!$MemberMode) {
 
 	# Learn about the Pool
-	if (!&$GetResults("Pool")){
-	 $np->nagios_exit('UNKNOWN', "Pool '$PoolName' is unknown");
+	my($pollResult) = &$GetResults("Pool");
+	if ($pollResult){
+	 $np->nagios_exit('UNKNOWN', sprintf("%s.  It's possible that Pool '$PoolName' is not valid", $pollResult));
 	}
 	
 	$status = OK;
@@ -239,8 +251,9 @@ if (!$MemberMode) {
 	print STDERR "oidMemberName = $oidMemberName\n" if ($np->opts->verbose >= 2);
 			
 	# Learn about the Member
-	if (!&$GetResults("Member")){
-		$np->nagios_exit('UNKNOWN', "Member '$MemberName' is unknown");
+	my($pollResult) = &$GetResults("Member");
+	if ($pollResult){
+	 $np->nagios_exit('UNKNOWN', sprintf("%s.  It's possible that Member '$MemberName' is not valid", $pollResult));
 	}
 	
 	$status = OK;
