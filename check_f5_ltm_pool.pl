@@ -43,7 +43,7 @@ my(%pool) = (
 	'ltmPoolStatServerPktsOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.4', 'desc' => 'Packets Out', 'uom' => 'c' , 'default' => 0 },
 	'ltmPoolStatServerBytesOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.5', 'desc' => 'Bytes Out', 'uom' => 'c' , 'default' => 0 },
 	'ltmPoolStatServerMaxConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.6', 'desc' => 'Max Connections', 'default' => 0  },
-	'ltmPoolStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.7', 'desc' => 'Total Connections', 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.7', 'desc' => 'Total Connections', 'default' => 0 },
 	'ltmPoolStatServerCurConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.2.3.1.8', 'desc' => 'Current Connections', 'uom' => '' , 'default' => 0 },
 );
 
@@ -53,9 +53,9 @@ my(%member) = (
 	'ltmPoolMemberStatServerPktsOut' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.7', 'desc' => 'Packets Out' , 'uom' => 'c' , 'default' => 0 },
 	'ltmPoolMemberStatServerBytesOut' =>	{'oid' =>  '.1.3.6.1.4.1.3375.2.2.5.4.3.1.8', 'desc' => 'Bytes Out' , 'uom' => 'c' , 'default' => 0 },
 	'ltmPoolMemberStatServerMaxConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.9', 'desc' => 'Max Connections'  , 'default' => 0 },
-	'ltmPoolMemberStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.10', 'desc' => 'Total Connections' , 'uom' => 'c' , 'default' => 0 },
+	'ltmPoolMemberStatServerTotConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.10', 'desc' => 'Total Connections' , 'default' => 0 },
 	'ltmPoolMemberStatServerCurConns' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.11', 'desc' => 'Current Connections' , 'uom' => '' , 'default' => 0 },
-	'ltmPoolMemberStatTotRequests' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.19', 'desc' => 'Total Requests', 'uom' => 'c', 'default' => 0 },
+	'ltmPoolMemberStatTotRequests' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.19', 'desc' => 'Total Requests',  'default' => 0 },
 	'ltmPoolMemberStatCurSessions' => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.4.3.1.29', 'desc' => 'Current Sessions', 'uom' => '', 'default' => 0 },
 	'ltmPoolMemberStatCurrentConnsPerSec' =>{'oid' =>  '.1.3.6.1.4.1.3375.2.2.5.4.3.1.30', 'desc' => 'Current Connections Per Second', 'uom' => '', 'default' => 0 },
 	'ltmPoolMbrStatusAvailState'  => 	{'oid' => '.1.3.6.1.4.1.3375.2.2.5.6.2.1.5', 'desc' => 'Status' },
@@ -253,7 +253,7 @@ if (!$MemberMode) {
 	# Learn about the Member
 	my($pollResult) = &$GetResults("Member");
 	if ($pollResult){
-	 $np->nagios_exit('UNKNOWN', sprintf("%s.  It's possible that Member '$MemberName' is not valid", $pollResult));
+	 $np->nagios_exit('UNKNOWN', sprintf("%s.  It's possible that Member '$MemberName:$ServicePort' is not valid in Pool '$PoolName'", $pollResult));
 	}
 	
 	$status = OK;
