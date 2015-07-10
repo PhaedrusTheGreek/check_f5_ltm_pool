@@ -3,6 +3,13 @@ check_f5_ltm_pool
 
 Nagios Plugin for Checking F5 LTM Pool / Pool Member Status &amp; Performance
 
+```
+Usage: check_f5_ltm_pool.pl -H <hostname> -C <Community>
+        -P <Pool Name> [-p <Partition Name>]
+        [-M <Member Name> -S <Service Port>]
+ Pool Mode Example: ./check_f5_ltm_pool.pl -H 10.1.1.1 -C public -P /Common/MY-POOL
+ Member Mode Example: ./check_f5_ltm_pool.pl -H 10.1.1.1 -C public -P /Common/MY-POOL -M /Common/My-Member -S 80 -v
+```
 
 # Pool Mode
 **Checks the Pool Status**
