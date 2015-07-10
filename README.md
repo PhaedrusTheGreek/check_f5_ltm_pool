@@ -11,7 +11,6 @@ Nagios Plugin for Checking F5 LTM Pool / Pool Member Status &amp; Performance
 - Unknown if specified pool can't be found
 
 ## Example
-
 ```
 # check_f5_ltm_pool.pl -H some.host.com -C public -P /Common/MYPOOL -t 25
 ```
