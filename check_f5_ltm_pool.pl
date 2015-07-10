@@ -2,7 +2,7 @@
 #
 #   Check F5 LTM 11 Pool & Member Performance Metrics
 ##
-#   Copyright (C) 2014 Jay Greenberg <ccie11021@gmail.com>
+#   Copyright (C) 2015 Jay Greenberg <ccie11021@gmail.com>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
